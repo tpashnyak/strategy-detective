@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Strategy Detective</title>
+<style>
+:root{
+  --navy:#0C4160; --navy-deep:#082E45; --gold:#D5BBA0; --gold-ink:#7A5A33; --gold-soft:#F4ECE3;
+  --paper:#FAF7F3; --card:#FFFFFF; --ink:#273540; --muted:#556275; --line:#D3DAE5;
+  --good:#1D6B45; --good-bg:#E5F4EC; --warn:#8A5300; --warn-bg:#FDF1DD; --bad:#A3271F; --bad-bg:#FBE7E5;
+  --display:"Playfair Display", Georgia, "Times New Roman", serif;
+  --body:"Source Sans 3","Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+:root[data-theme="dark"]{
+  --paper:#0E1726; --card:#16233A; --ink:#E7ECF4; --muted:#A7B3C6; --line:#2C3D5A; --gold-ink:#E5C766; --gold-soft:#2A2614;
+  --good:#7FD3A6; --good-bg:#16352A; --warn:#F2C16B; --warn-bg:#3A2C12; --bad:#F2958D; --bad-bg:#3D1C1A; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 var(--body);}
+.top{background:var(--navy-deep);color:#fff;padding:18px max(16px,env(safe-area-inset-left,0px)) 16px;border-bottom:3px solid var(--gold)}
+.top .eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 8px}
+.top h1{font:700 clamp(22px,4vw,30px)/1.15 var(--display);margin:0 0 6px;text-wrap:balance}
+.top p{margin:0;color:#C9D4E5;font-size:15px;max-width:68ch}
+main{max-width:980px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px));display:grid;gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+h2{font:700 21px/1.25 var(--display);margin:0 0 6px;color:var(--ink)}
+h3{font:600 16px/1.3 var(--body);margin:14px 0 6px}
+.lbl{font:600 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold-ink);margin:0 0 8px}
+.muted{color:var(--muted)}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.steps li{font:600 12px/1 var(--mono);padding:7px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.steps li.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.steps li.done{border-color:var(--gold);color:var(--gold-ink)}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.opt{display:block;width:100%;text-align:left;background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:6px;padding:12px 14px;font:inherit;cursor:pointer}
+.opt:hover{border-color:var(--navy)}
+.opt[aria-pressed="true"]{border-color:var(--gold);background:var(--gold-soft)}
+.opt strong{display:block;margin-bottom:2px}
+.opt small{color:var(--muted);display:block;line-height:1.4}
+button{font:inherit}
+.btn{background:var(--navy);color:#fff;border:2px solid var(--navy);border-radius:5px;padding:10px 18px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--navy-deep)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#1A1400}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.fb{border-radius:6px;padding:12px 14px;margin-top:10px}
+.fb.good{background:var(--good-bg);color:var(--good)} .fb.warn{background:var(--warn-bg);color:var(--warn)} .fb.bad{background:var(--bad-bg);color:var(--bad)}
+.fb p{margin:4px 0;color:var(--ink)}
+.meter{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+.meter>span{display:block;height:100%;background:var(--gold);transition:width .4s}
+.stat{font:700 26px/1.1 var(--mono);font-variant-numeric:tabular-nums}
+input[type=text],textarea,input[type=number]{width:100%;font:inherit;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:5px;padding:9px 11px}
+textarea{min-height:84px;resize:vertical}
+input[type=range]{width:100%;accent-color:var(--navy)}
+label{font-weight:600;display:block;margin:10px 0 4px}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-size:14px}
+.tablewrap{overflow-x:auto}
+.results pre{white-space:pre-wrap;background:var(--paper);border:1px dashed var(--line);border-radius:6px;padding:14px;font:13px/1.55 var(--mono);margin:10px 0;max-height:360px;overflow:auto}
+.chip{display:inline-block;font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 8px;border-radius:4px;background:var(--gold-soft);color:var(--gold-ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hide{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head>
+<body>
+<header class="top"><p class="eyebrow">AP Business with Personal Finance · Task 1 · Day 1</p><h1>Strategy Detective</h1><p>Where do business ideas come from? Ten companies, five strategies, one detective: you.</p></header>
+<main id="app">
+
+<section class="card">
+  <p class="lbl">Day 1 · Interactive case files</p>
+  <h2>Crack each case: how did this business find its idea?</h2>
+  <p class="muted">Ten case files. For each one, choose the idea-generation strategy the business used. Then, in Round 2, decide why three founders were willing to take on risk.</p>
+  <div class="row"><span class="chip" id="prog">Case 1 of 10</span><span class="chip" id="scoreChip">Score 0</span></div>
+</section>
+<section class="card" id="caseCard" aria-live="polite">
+  <p class="lbl" id="caseTag"></p><h2 id="caseName"></h2><div id="caseText"></div>
+  <h3>Which strategy did they use?</h3>
+  <div class="grid" id="stratGrid"></div>
+  <div id="caseFb"></div>
+  <div class="row" style="margin-top:12px"><button class="btn hide" id="nextCase" type="button">Next case</button></div>
+</section>
+<section class="card hide" id="riskCard">
+  <p class="lbl">Round 2 · Why take the risk?</p>
+  <h2>Every launch costs money, materials, and people</h2>
+  <p class="muted">Bringing a new product to market uses financial, physical, and human resources, with no guarantee of profit. Read each founder's story and pick the main reason they took the risk.</p>
+  <div id="riskList"></div>
+  <button class="btn" id="riskDone" type="button">See my results</button>
+</section>
+<section class="card hide" id="out"></section>
+
+</main>
+<div id="live" class="sr" aria-live="polite"></div>
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function say(msg){const l=$('#live'); if(l){l.textContent=''; setTimeout(()=>l.textContent=msg,30);}}
+function store(k,v){try{if(v===undefined){return JSON.parse(localStorage.getItem('apbpf:'+k)||'null')}localStorage.setItem('apbpf:'+k,JSON.stringify(v))}catch(e){return null}}
+function copyText(txt,btn){
+  const done=()=>{const o=btn.textContent;btn.textContent='Copied! Paste it into your notes';say('Results copied');setTimeout(()=>btn.textContent=o,2500)};
+  const fallback=()=>{const pre=btn.closest('.results').querySelector('pre');const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Text selected. Press Ctrl+C (Cmd+C)'};
+  try{navigator.clipboard.writeText(txt).then(done,fallback)}catch(e){fallback()}
+}
+function resultsBlock(host,toolName,lines){
+  const nm=($('#stuName')&&$('#stuName').value.trim())||'[your name]';
+  const stamp=new Date().toLocaleString();
+  const txt=`STRATEGY WORKSPACE · ${toolName}\nName: ${nm}\nCompleted: ${stamp}\n${'-'.repeat(40)}\n`+lines.join('\n');
+  host.innerHTML=`<div class="results"><p class="lbl">Your results</p><h2>Save your thinking</h2>
+  <p class="muted">This is practice, not a grade. Copy your summary into your notes so you can use it later in your Business Canvas Project.</p>
+  <label for="stuName">Your name</label><input id="stuName" type="text" value="${esc(nm==='[your name]'?'':nm)}" autocomplete="name">
+  <pre tabindex="0" aria-label="Results summary">${esc(txt)}</pre>
+  <div class="row"><button class="btn gold" type="button" id="copyBtn">Copy my results</button></div></div>`;
+  $('#stuName',host).addEventListener('change',()=>resultsBlock(host,toolName,lines));
+  $('#copyBtn',host).addEventListener('click',e=>copyText($('pre',host).textContent,e.currentTarget));
+}
+
+
+const STRATS=[['observe','Observing customers'],['interview','Interviewing customers'],['survey','Surveying customers'],['research','Market & technical research'],['experiment','Experimentation']];
+const CASES=[
+ {n:'Starbucks',tag:'From your lesson page',t:'On a trip to Italy, Howard Schultz noticed customers lingering in cafés instead of grabbing coffee to go. Starbucks redesigned its stores as cozy "third places" between home and work.',a:['observe'],why:'Schultz <strong>watched</strong> what customers did in cafés. Nobody was asked a question, so this is observation.'},
+ {n:'LEGO',tag:'From your lesson page',t:'LEGO runs in-depth conversations and "play sessions" with kids and parents to learn how families use its products. The insights led to LEGO Friends for kids who preferred storytelling.',a:['interview'],why:'In-depth conversations with families are <strong>interviews</strong>. The play sessions add observation, but the handout highlights what families told LEGO.'},
+ {n:'Netflix',tag:'From your lesson page',t:'Netflix studied viewing data and saw customers binge-watching entire seasons. It released Netflix Originals with every episode at once.',a:['research'],why:'Analyzing large sets of viewing data is <strong>market research</strong>. It found a pattern no single customer would have described.'},
+ {n:'3M (Post-it Notes)',tag:'From your lesson page',t:'A 3M scientist trying to make a super-strong adhesive accidentally created a weak one. A coworker realized it could hold paper lightly to surfaces.',a:['experiment'],why:'The idea came out of lab work. That is <strong>experimentation</strong>, developing new capabilities by testing, even when the result is a surprise.'},
+ {n:'Dyson',tag:'From your lesson page',t:'James Dyson watched vacuums lose suction as bags clogged. He built and tested more than 5,000 prototypes of a bagless cyclone design.',a:['observe','experiment'],why:'Both answers work. Dyson <strong>observed</strong> the problem, then used <strong>experimentation</strong> (5,000+ prototypes) to solve it. Real founders often combine strategies.'},
+ {n:'Tidewater Kayak Rentals',tag:'New case (fictional)',t:'The owners emailed a five-question online form to 400 past renters. 62% asked for guided sunset tours, which became the company\'s best-selling product.',a:['survey'],why:'A short set of questions sent to many customers at once is a <strong>survey</strong>.'},
+ {n:'PawPal Carriers',tag:'New case (fictional)',t:'A founder spent a week in a veterinary clinic\'s waiting room, noting how often owners struggled to get nervous cats into hard plastic carriers.',a:['observe'],why:'She <strong>watched</strong> real customers struggle in a real setting. That is observation.'},
+ {n:'Byte Bento',tag:'New case (fictional)',t:'Before launching, the founders studied city delivery-app data and industry reports and found almost no healthy late-night food options near hospitals.',a:['research'],why:'Using data and reports to find a gap is <strong>market research</strong>.'},
+ {n:'StudyNest',tag:'New case (fictional)',t:'A college junior held 25 one-on-one conversations with classmates about where and when they study best. The answers became a booking app for quiet campus spaces.',a:['interview'],why:'One-on-one conversations with open-ended questions are <strong>interviews</strong>.'},
+ {n:'GritGrip Phone Cases',tag:'New case (fictional)',t:'A materials engineer tested 40 rubber blends in her garage until one stayed grippy in rain and heat. That blend became the product.',a:['experiment'],why:'Testing blend after blend to create a new capability is <strong>experimentation</strong>.'}
+];
+const RISK=[
+ {n:'Maya',t:'Maya left a steady job and put her $18,000 savings into a mobile bike-repair van after watching the closest repair shop shut down. "I just couldn\'t stand that people in my town had nowhere to fix a flat."',a:'solve'},
+ {n:'Dev',t:'Dev noticed rising demand for affordable meal-prep in his city and projected he could earn more than his current salary within three years if the business grew to two kitchens.',a:'profit'},
+ {n:'Rosa',t:'Rosa has painted since she was eight. She borrowed $4,000 to open a weekend pottery-and-paint studio because she wants to spend her life making art with people.',a:'passion'}
+];
+const MOT=[['profit','Potential to earn future profits'],['solve','Satisfaction of solving a problem'],['passion','The chance to pursue a passion']];
+let i=0,score=0,answered=false,log=[];
+function render(){
+  const c=CASES[i]; answered=false;
+  $('#prog').textContent=`Case ${i+1} of ${CASES.length}`; $('#caseTag').textContent=c.tag; $('#caseName').textContent=c.n;
+  $('#caseText').innerHTML=`<p>${c.t}</p>`; $('#caseFb').innerHTML=''; $('#nextCase').classList.add('hide');
+  $('#stratGrid').innerHTML=STRATS.map(([k,l])=>`<button type="button" class="opt" data-s="${k}" aria-pressed="false"><strong>${l}</strong></button>`).join('');
+}
+$('#stratGrid').addEventListener('click',e=>{
+  const b=e.target.closest('[data-s]'); if(!b||answered) return; answered=true;
+  const c=CASES[i], ok=c.a.includes(b.dataset.s); if(ok) score++;
+  b.setAttribute('aria-pressed','true');
+  log.push(`${c.n}: chose "${STRATS.find(s=>s[0]===b.dataset.s)[1]}" ${ok?'(correct)':'(missed)'}`);
+  $('#caseFb').innerHTML=`<div class="fb ${ok?'good':'bad'}"><p><strong>${ok?'Case cracked.':'Not quite.'}</strong> ${c.why}</p></div>`;
+  $('#scoreChip').textContent=`Score ${score}`;
+  const nb=$('#nextCase'); nb.textContent=i<CASES.length-1?'Next case':'Go to Round 2'; nb.classList.remove('hide'); nb.focus();
+});
+$('#nextCase').addEventListener('click',()=>{ if(i<CASES.length-1){i++;render();$('#caseName').focus?.()} else {$('#caseCard').classList.add('hide');const r=$('#riskCard');r.classList.remove('hide');r.scrollIntoView({behavior:'smooth'})} });
+$('#riskList').innerHTML=RISK.map((r,k)=>`<div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">${r.n}</h3><p>${r.t}</p>
+ <fieldset style="border:0;padding:0;margin:0"><legend class="sr">Why did ${r.n} take the risk?</legend>${MOT.map(([v,l])=>`<label style="font-weight:400"><input type="radio" name="r${k}" value="${v}"> ${l}</label>`).join('')}</fieldset>
+ <label for="rw${k}">What resources did ${r.n} put at risk? (financial, physical, human)</label><input type="text" id="rw${k}"></div>`).join('');
+$('#riskDone').addEventListener('click',()=>{
+  let rs=0; const lines=[`ROUND 1 · Strategy cases: ${score} of ${CASES.length}`,...log,'','ROUND 2 · Why take the risk?'];
+  RISK.forEach((r,k)=>{const v=($(`input[name=r${k}]:checked`)||{}).value; const ok=v===r.a; if(ok) rs++;
+    lines.push(`${r.n}: ${v?MOT.find(m=>m[0]===v)[1]:'(no answer)'} ${ok?'(matches)':'(suggested: '+MOT.find(m=>m[0]===r.a)[1]+')'}`);
+    lines.push(`   Resources at risk: ${$('#rw'+k).value.trim()||'(not answered)'}`)});
+  lines.push(`Round 2 score: ${rs} of ${RISK.length}`);
+  const out=$('#out'); out.classList.remove('hide'); resultsBlock(out,'Strategy Detective',lines); out.scrollIntoView({behavior:'smooth'});
+});
+render();
+
+</script>
+</body></html>
