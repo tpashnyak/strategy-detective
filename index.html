@@ -65,17 +65,19 @@ th{background:var(--paper);font-size:14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head>
 <body>
-<header class="top"><p class="eyebrow">AP Business with Personal Finance · Task 1 · Day 1</p><h1>Strategy Detective</h1><p>Where do business ideas come from? Ten companies, five strategies, one detective: you.</p></header>
+<header class="top"><p class="eyebrow">AP Business with Personal Finance · Task 1 · Day 1</p><h1>Strategy Detective</h1><p>Where do business ideas come from? Ten new cases, five strategies, one detective: you.</p></header>
 <main id="app">
 
-<section class="card">
+<section class="card" id="intro">
   <p class="lbl">Day 1 · Interactive case files</p>
   <h2>Crack each case: how did this business find its idea?</h2>
-  <p class="muted">Ten case files. For each one, choose the idea-generation strategy the business used. Then, in Round 2, decide why three founders were willing to take on risk.</p>
-  <div class="row"><span class="chip" id="prog">Case 1 of 10</span><span class="chip" id="scoreChip">Score 0</span></div>
+  <p class="muted">Ten new case files. For each one, choose the idea-generation strategy the business used. Miss one? You get a hint and another try. In Round 2, decide why three founders were willing to take on risk. Earn your detective badge at the end!</p>
+  <label for="stuName">Detective name (for your certificate)</label><input id="stuName" type="text" autocomplete="name" placeholder="First and last name">
+  <div class="tracker" id="tracker" aria-hidden="true"></div>
+  <div class="row" style="margin-top:10px"><span class="chip" id="prog">Case 1 of 10</span><span class="chip" id="scoreChip">First-try points 0</span><span class="chip" id="streak">🔥 Streak 0</span></div>
 </section>
 <section class="card" id="caseCard" aria-live="polite">
-  <p class="lbl" id="caseTag"></p><h2 id="caseName"></h2><div id="caseText"></div>
+  <p class="lbl" id="caseTag"></p><h2 id="caseName" tabindex="-1"></h2><div id="caseText"></div>
   <h3>Which strategy did they use?</h3>
   <div class="grid" id="stratGrid"></div>
   <div id="caseFb"></div>
@@ -83,12 +85,32 @@ th{background:var(--paper);font-size:14px}
 </section>
 <section class="card hide" id="riskCard">
   <p class="lbl">Round 2 · Why take the risk?</p>
-  <h2>Every launch costs money, materials, and people</h2>
-  <p class="muted">Bringing a new product to market uses financial, physical, and human resources, with no guarantee of profit. Read each founder's story and pick the main reason they took the risk.</p>
+  <h2 id="riskHead" tabindex="-1">Every launch costs money, materials, and people</h2>
+  <p class="muted">Bringing a new product to market uses financial, physical, and human resources, with no guarantee of profit. Pick the main reason each founder took the risk, then check. Missed it? Try again.</p>
   <div id="riskList"></div>
-  <button class="btn" id="riskDone" type="button">See my results</button>
+  <button class="btn hide" id="riskDone" type="button">Claim my badge</button>
 </section>
-<section class="card hide" id="out"></section>
+<section class="card hide" id="out" aria-live="polite"></section>
+<style>
+.art{position:relative;border-radius:10px;height:150px;display:flex;align-items:center;justify-content:center;margin:4px 0 12px;overflow:hidden;border:2px solid rgba(12,65,96,.15)}
+.art .big{font-size:78px;line-height:1;filter:drop-shadow(0 4px 2px rgba(0,0,0,.15))}
+.art .tab{position:absolute;top:0;left:14px;background:#0C4160;color:#fff;font:700 11px/1 var(--mono);letter-spacing:.12em;padding:6px 10px;border-radius:0 0 6px 6px}
+.art .stamp{position:absolute;right:14px;bottom:12px;transform:rotate(-8deg);border:3px solid #A3271F;color:#A3271F;font:800 13px/1 var(--mono);letter-spacing:.1em;padding:5px 8px;border-radius:4px;opacity:.8}
+.opt .ic{font-size:26px;display:block;margin-bottom:4px}
+.tracker{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.fold{width:34px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--paper);border:2px solid var(--line);font-size:16px}
+.fold.now{border-color:#0C4160;transform:translateY(-3px)}.fold.gold{background:#FFF4CC;border-color:#C9A227}.fold.done{background:var(--good-bg);border-color:var(--good);color:var(--good);font-weight:700}
+.avatar{display:inline-flex;width:40px;height:40px;border-radius:50%;background:var(--gold-soft);align-items:center;justify-content:center;font-size:22px;margin-right:6px;vertical-align:middle}
+.confetti{font-size:30px;letter-spacing:8px;margin:0}
+.opt[disabled]{opacity:.45;cursor:not-allowed;text-decoration:line-through}
+.opt.right{border-color:var(--good);background:var(--good-bg)}
+.cert{border:10px double var(--gold);border-radius:10px;padding:26px 22px;text-align:center;background:linear-gradient(180deg,#fff,var(--gold-soft))}
+.cert h2{font-size:30px;margin:6px 0}
+.cert .who{font:700 28px/1.2 var(--display);color:var(--navy);border-bottom:2px solid var(--gold);display:inline-block;padding:0 18px 4px;margin:8px 0 10px}
+.badge{width:140px;height:140px;margin:0 auto 6px;display:block}
+.stars{font-size:26px;letter-spacing:4px}
+@media print{body{background:#fff}.top,#intro,#caseCard,#riskCard,.noprint{display:none!important}#out{border:0;padding:0}main{padding:0}}
+</style>
 
 </main>
 <div id="live" class="sr" aria-live="polite"></div>
@@ -116,54 +138,89 @@ function resultsBlock(host,toolName,lines){
 }
 
 
-const STRATS=[['observe','Observing customers'],['interview','Interviewing customers'],['survey','Surveying customers'],['research','Market & technical research'],['experiment','Experimentation']];
+const STRATS=[['observe','Observing customers','👀'],['interview','Interviewing customers','🎤'],['survey','Surveying customers','📋'],['research','Market & technical research','📊'],['experiment','Experimentation','🧪']];
 const CASES=[
- {n:'Starbucks',tag:'From your lesson page',t:'On a trip to Italy, Howard Schultz noticed customers lingering in cafés instead of grabbing coffee to go. Starbucks redesigned its stores as cozy "third places" between home and work.',a:['observe'],why:'Schultz <strong>watched</strong> what customers did in cafés. Nobody was asked a question, so this is observation.'},
- {n:'LEGO',tag:'From your lesson page',t:'LEGO runs in-depth conversations and "play sessions" with kids and parents to learn how families use its products. The insights led to LEGO Friends for kids who preferred storytelling.',a:['interview'],why:'In-depth conversations with families are <strong>interviews</strong>. The play sessions add observation, but the handout highlights what families told LEGO.'},
- {n:'Netflix',tag:'From your lesson page',t:'Netflix studied viewing data and saw customers binge-watching entire seasons. It released Netflix Originals with every episode at once.',a:['research'],why:'Analyzing large sets of viewing data is <strong>market research</strong>. It found a pattern no single customer would have described.'},
- {n:'3M (Post-it Notes)',tag:'From your lesson page',t:'A 3M scientist trying to make a super-strong adhesive accidentally created a weak one. A coworker realized it could hold paper lightly to surfaces.',a:['experiment'],why:'The idea came out of lab work. That is <strong>experimentation</strong>, developing new capabilities by testing, even when the result is a surprise.'},
- {n:'Dyson',tag:'From your lesson page',t:'James Dyson watched vacuums lose suction as bags clogged. He built and tested more than 5,000 prototypes of a bagless cyclone design.',a:['observe','experiment'],why:'Both answers work. Dyson <strong>observed</strong> the problem, then used <strong>experimentation</strong> (5,000+ prototypes) to solve it. Real founders often combine strategies.'},
- {n:'Tidewater Kayak Rentals',tag:'New case (fictional)',t:'The owners emailed a five-question online form to 400 past renters. 62% asked for guided sunset tours, which became the company\'s best-selling product.',a:['survey'],why:'A short set of questions sent to many customers at once is a <strong>survey</strong>.'},
- {n:'PawPal Carriers',tag:'New case (fictional)',t:'A founder spent a week in a veterinary clinic\'s waiting room, noting how often owners struggled to get nervous cats into hard plastic carriers.',a:['observe'],why:'She <strong>watched</strong> real customers struggle in a real setting. That is observation.'},
- {n:'Byte Bento',tag:'New case (fictional)',t:'Before launching, the founders studied city delivery-app data and industry reports and found almost no healthy late-night food options near hospitals.',a:['research'],why:'Using data and reports to find a gap is <strong>market research</strong>.'},
- {n:'StudyNest',tag:'New case (fictional)',t:'A college junior held 25 one-on-one conversations with classmates about where and when they study best. The answers became a booking app for quiet campus spaces.',a:['interview'],why:'One-on-one conversations with open-ended questions are <strong>interviews</strong>.'},
- {n:'GritGrip Phone Cases',tag:'New case (fictional)',t:'A materials engineer tested 40 rubber blends in her garage until one stayed grippy in rain and heat. That blend became the product.',a:['experiment'],why:'Testing blend after blend to create a new capability is <strong>experimentation</strong>.'}
+ {n:'Swiffer (Procter & Gamble)',art:'🧹',bg:'#E2EFDA',tag:'Real company',t:'Designers working with P&G watched people mop their floors at home. They noticed people spent almost as much time cleaning the dirty mop as cleaning the floor. The result: a mop with throw-away cleaning pads.',a:['observe'],hint:'Did anyone ask customers a question, or did the designers simply <em>watch</em>?',why:'The designers <strong>watched</strong> real people clean. Seeing what customers actually do is <strong>observation</strong>.'},
+ {n:'The Microwave Oven (Raytheon)',art:'🍿',bg:'#FFE27A',tag:'Real company',t:'In 1945, engineer Percy Spencer noticed a candy bar in his pocket melted while he worked near radar equipment. He tested popcorn kernels and an egg next to the equipment, and the microwave oven was born.',a:['experiment'],hint:'What did Spencer do right after the candy bar melted?',why:'Spencer ran tests to see what else the equipment could heat. Testing to develop a new capability is <strong>experimentation</strong>.'},
+ {n:'Airbnb',art:'🏠',bg:'#D6E6F2',tag:'Real company',t:'Early on, Airbnb\'s founders flew to New York to meet their hosts in person and talk with them about renting their homes. They learned that blurry phone photos were hurting bookings, so they offered professional photos.',a:['interview','observe'],hint:'The founders met hosts face to face. What were they doing in those meetings?',why:'Meeting hosts and talking with them one on one is <strong>interviewing</strong> (and seeing the listings firsthand added <strong>observation</strong>). Both answers work.'},
+ {n:'Domino\'s Pizza',art:'🍕',bg:'#FBE3D0',tag:'Real company',t:'In 2009, Domino\'s collected feedback from thousands of customers through surveys and taste tests. Many said the crust tasted like cardboard. Domino\'s rebuilt its recipe from scratch and advertised the honest feedback.',a:['survey','interview'],hint:'How do you hear from <em>thousands</em> of customers at once?',why:'Asking the same questions to a large number of customers is a <strong>survey</strong>.'},
+ {n:'Spotify Discover Weekly',art:'🎧',bg:'#E2EFDA',tag:'Real company',t:'Spotify analyzed the listening data of millions of users to learn which songs people enjoy together. It used that data to create Discover Weekly, a personalized playlist of new songs for each listener.',a:['research'],hint:'Spotify didn\'t talk to anyone. What did it study instead?',why:'Studying large sets of data to find patterns and gaps is <strong>market and technical research</strong>.'},
+ {n:'Tidewater Kayak Rentals',art:'🛶',bg:'#D6E6F2',tag:'New case (fictional)',t:'The owners emailed a five-question online form to 400 past renters. 62% asked for guided sunset tours, which became the company\'s best-selling product.',a:['survey'],hint:'All 400 renters got the same five questions. Which strategy reaches many customers at once?',why:'A short set of questions sent to many customers at once is a <strong>survey</strong>.'},
+ {n:'PawPal Carriers',art:'🐱',bg:'#F4ECE3',tag:'New case (fictional)',t:'A founder spent a week in a veterinary clinic\'s waiting room, noting how often owners struggled to get nervous cats into hard plastic carriers.',a:['observe'],hint:'She sat in a waiting room. Did she ask questions, or watch?',why:'She <strong>watched</strong> real customers struggle in a real setting. That is observation.'},
+ {n:'Byte Bento',art:'🍱',bg:'#FFE27A',tag:'New case (fictional)',t:'Before launching, the founders studied city delivery-app data and industry reports and found almost no healthy late-night food options near hospitals.',a:['research'],hint:'Data and industry reports are tools for what kind of strategy?',why:'Using data and reports to find a gap is <strong>market research</strong>.'},
+ {n:'StudyNest',art:'📚',bg:'#E6E0F5',tag:'New case (fictional)',t:'A college junior held 25 one-on-one conversations with classmates about where and when they study best. The answers became a booking app for quiet campus spaces.',a:['interview'],hint:'She talked with classmates one at a time and let them answer in their own words. Is that a quick form, or something more personal?',why:'One-on-one conversations with open-ended questions are <strong>interviews</strong>.'},
+ {n:'GritGrip Phone Cases',art:'📱',bg:'#FBE7E5',tag:'New case (fictional)',t:'A materials engineer tested 40 rubber blends in her garage until one stayed grippy in rain and heat. That blend became the product.',a:['experiment'],hint:'Forty blends, tested one after another. What is that called?',why:'Testing blend after blend to create a new capability is <strong>experimentation</strong>.'}
 ];
 const RISK=[
- {n:'Maya',t:'Maya left a steady job and put her $18,000 savings into a mobile bike-repair van after watching the closest repair shop shut down. "I just couldn\'t stand that people in my town had nowhere to fix a flat."',a:'solve'},
- {n:'Dev',t:'Dev noticed rising demand for affordable meal-prep in his city and projected he could earn more than his current salary within three years if the business grew to two kitchens.',a:'profit'},
- {n:'Rosa',t:'Rosa has painted since she was eight. She borrowed $4,000 to open a weekend pottery-and-paint studio because she wants to spend her life making art with people.',a:'passion'}
+ {n:'Maya',art:'🚲',t:'Maya left a steady job and put her $18,000 savings into a mobile bike-repair van after watching the closest repair shop shut down. "I just couldn\'t stand that people in my town had nowhere to fix a flat."',a:'solve',hint:'Listen to her quote. Is she talking about money, art, or her town\'s problem?'},
+ {n:'Dev',art:'🥗',t:'Dev noticed rising demand for affordable meal-prep in his city and projected he could earn more than his current salary within three years if the business grew to two kitchens.',a:'profit',hint:'Dev is focused on what he could <em>earn</em>.'},
+ {n:'Rosa',art:'🎨',t:'Rosa has painted since she was eight. She borrowed $4,000 to open a weekend pottery-and-paint studio because she wants to spend her life making art with people.',a:'passion',hint:'What has Rosa loved doing since she was eight?'}
 ];
 const MOT=[['profit','Potential to earn future profits'],['solve','Satisfaction of solving a problem'],['passion','The chance to pursue a passion']];
-let i=0,score=0,answered=false,log=[];
+let order=[],i=0,first=0,tries=0,streak=0,best=0,done=false,log=[],riskFirst=0,riskOk=[],rtries=[];
+function shuffle(a){a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
+function start(){marks.length=0;order=shuffle(CASES);i=0;first=0;streak=0;best=0;log=[];riskFirst=0;riskOk=RISK.map(()=>null);rtries=RISK.map(()=>0);
+  $('#out').classList.add('hide');$('#riskCard').classList.add('hide');$('#caseCard').classList.remove('hide');$('#riskDone').classList.add('hide');buildRisk();render();chips()}
+const marks=[];
+function track(){$('#tracker').innerHTML=order.map((c,k)=>`<span class="fold ${k===i?'now':''} ${marks[k]||''}" title="Case ${k+1}">${marks[k]==='gold'?'⭐':marks[k]==='done'?'✔':'📁'}</span>`).join('')}
+function chips(){$('#scoreChip').textContent=`First-try points ${first+riskFirst}`;$('#streak').textContent=`🔥 Streak ${streak}`}
 function render(){
-  const c=CASES[i]; answered=false;
-  $('#prog').textContent=`Case ${i+1} of ${CASES.length}`; $('#caseTag').textContent=c.tag; $('#caseName').textContent=c.n;
-  $('#caseText').innerHTML=`<p>${c.t}</p>`; $('#caseFb').innerHTML=''; $('#nextCase').classList.add('hide');
-  $('#stratGrid').innerHTML=STRATS.map(([k,l])=>`<button type="button" class="opt" data-s="${k}" aria-pressed="false"><strong>${l}</strong></button>`).join('');
+  const c=order[i]; tries=0; done=false;
+  $('#prog').textContent=`Case ${i+1} of ${order.length}`; $('#caseTag').textContent=c.tag; $('#caseName').textContent=c.n;
+  $('#caseText').innerHTML=`<div class="art" style="background:${c.bg}" aria-hidden="true"><span class="tab">CASE FILE #${String(i+1).padStart(2,'0')}</span><span class="big">${c.art}</span><span class="stamp">${c.tag==='Real company'?'REAL COMPANY':'TOP SECRET'}</span></div><p>${c.t}</p>`; track(); $('#caseFb').innerHTML=''; $('#nextCase').classList.add('hide');
+  $('#stratGrid').innerHTML=STRATS.map(([k,l,ic])=>`<button type="button" class="opt" data-s="${k}" aria-pressed="false"><span class="ic" aria-hidden="true">${ic}</span><strong>${l}</strong></button>`).join('');
 }
 $('#stratGrid').addEventListener('click',e=>{
-  const b=e.target.closest('[data-s]'); if(!b||answered) return; answered=true;
-  const c=CASES[i], ok=c.a.includes(b.dataset.s); if(ok) score++;
-  b.setAttribute('aria-pressed','true');
-  log.push(`${c.n}: chose "${STRATS.find(s=>s[0]===b.dataset.s)[1]}" ${ok?'(correct)':'(missed)'}`);
-  $('#caseFb').innerHTML=`<div class="fb ${ok?'good':'bad'}"><p><strong>${ok?'Case cracked.':'Not quite.'}</strong> ${c.why}</p></div>`;
-  $('#scoreChip').textContent=`Score ${score}`;
-  const nb=$('#nextCase'); nb.textContent=i<CASES.length-1?'Next case':'Go to Round 2'; nb.classList.remove('hide'); nb.focus();
+  const b=e.target.closest('[data-s]'); if(!b||done||b.disabled) return;
+  const c=order[i], ok=c.a.includes(b.dataset.s); tries++;
+  if(ok){ done=true; b.classList.add('right'); b.setAttribute('aria-pressed','true');
+    if(tries===1){first++;streak++;best=Math.max(best,streak);marks[i]='gold'} else {streak=0;marks[i]='done'} track();
+    log.push(`${c.n}: ${tries===1?'cracked on the first try':'cracked after '+tries+' tries'}`);
+    $('#caseFb').innerHTML=`<div class="fb good"><p><strong>${tries===1?'Case cracked! +1 point.':'Case cracked on try '+tries+'.'}</strong> ${c.why}</p></div>`;
+    const nb=$('#nextCase'); nb.textContent=i<order.length-1?'Next case':'Go to Round 2'; nb.classList.remove('hide'); nb.focus(); say('Correct');
+  } else { b.disabled=true; streak=0;
+    $('#caseFb').innerHTML=`<div class="fb warn"><p><strong>Not quite. Try again!</strong> Hint: ${c.hint}</p></div>`; say('Not quite. Try again.');
+  }
+  chips();
 });
-$('#nextCase').addEventListener('click',()=>{ if(i<CASES.length-1){i++;render();$('#caseName').focus?.()} else {$('#caseCard').classList.add('hide');const r=$('#riskCard');r.classList.remove('hide');r.scrollIntoView({behavior:'smooth'})} });
-$('#riskList').innerHTML=RISK.map((r,k)=>`<div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">${r.n}</h3><p>${r.t}</p>
- <fieldset style="border:0;padding:0;margin:0"><legend class="sr">Why did ${r.n} take the risk?</legend>${MOT.map(([v,l])=>`<label style="font-weight:400"><input type="radio" name="r${k}" value="${v}"> ${l}</label>`).join('')}</fieldset>
- <label for="rw${k}">What resources did ${r.n} put at risk? (financial, physical, human)</label><input type="text" id="rw${k}"></div>`).join('');
+$('#nextCase').addEventListener('click',()=>{ if(i<order.length-1){i++;render();$('#caseName').focus()} else {$('#caseCard').classList.add('hide');const r=$('#riskCard');r.classList.remove('hide');$('#riskHead').focus();r.scrollIntoView({behavior:'smooth'})} });
+function buildRisk(){
+  $('#riskList').innerHTML=RISK.map((r,k)=>`<div class="card" style="margin-bottom:12px"><h3 style="margin-top:0"><span class="avatar" aria-hidden="true">${r.art}</span> ${r.n}</h3><p>${r.t}</p>
+   <fieldset style="border:0;padding:0;margin:0"><legend class="sr">Why did ${r.n} take the risk?</legend>${MOT.map(([v,l])=>`<label style="font-weight:400"><input type="radio" name="r${k}" value="${v}"> ${l}</label>`).join('')}</fieldset>
+   <div class="row" style="margin-top:8px"><button type="button" class="btn ghost" data-chk="${k}">Check</button></div><div id="rf${k}"></div></div>`).join('');
+}
+$('#riskList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-chk]'); if(!b) return; const k=+b.dataset.chk, r=RISK[k];
+  if(riskOk[k]) return; const v=($(`input[name=r${k}]:checked`)||{}).value;
+  if(!v){$('#rf'+k).innerHTML='<div class="fb warn"><p>Pick an answer first.</p></div>';return}
+  rtries[k]++;
+  if(v===r.a){riskOk[k]=rtries[k]; if(rtries[k]===1) riskFirst++;
+    $('#rf'+k).innerHTML=`<div class="fb good"><p><strong>Yes!</strong> ${MOT.find(m=>m[0]===r.a)[1]}.${rtries[k]===1?' +1 point.':''}</p></div>`; b.disabled=true;
+    $$(`input[name=r${k}]`).forEach(x=>x.disabled=true);
+  } else { $('#rf'+k).innerHTML=`<div class="fb warn"><p><strong>Not quite. Try again!</strong> Hint: ${r.hint}</p></div>`; $(`input[name=r${k}][value=${v}]`).disabled=true; $(`input[name=r${k}][value=${v}]`).checked=false }
+  chips(); if(riskOk.every(x=>x)) {$('#riskDone').classList.remove('hide');$('#riskDone').focus()}
+});
+const RANKS=[[13,'Master Detective','🥇','#C9A227','Flawless! Every case cracked on the first try.'],[11,'Senior Detective','🥈','#8C9AA8','Sharp eyes. Only a clue or two needed.'],[8,'Detective','🥉','#B07A4A','Solid sleuthing. Every case closed.'],[0,'Detective in Training','🔎','#4F7FA8','Every case closed. Play again to climb the ranks!']];
+function badgeSVG(col,icon){return `<svg class="badge" viewBox="0 0 140 140" role="img" aria-label="Detective badge"><circle cx="70" cy="70" r="64" fill="${col}"/><circle cx="70" cy="70" r="54" fill="#fff" stroke="${col}" stroke-width="4" stroke-dasharray="6 5"/><circle cx="64" cy="58" r="20" fill="none" stroke="#0C4160" stroke-width="8"/><line x1="78" y1="72" x2="94" y2="88" stroke="#0C4160" stroke-width="11" stroke-linecap="round"/><text x="70" y="106" text-anchor="middle" font-size="12" font-weight="700" fill="#0C4160" font-family="Arial">AP BPF</text></svg>`}
 $('#riskDone').addEventListener('click',()=>{
-  let rs=0; const lines=[`ROUND 1 · Strategy cases: ${score} of ${CASES.length}`,...log,'','ROUND 2 · Why take the risk?'];
-  RISK.forEach((r,k)=>{const v=($(`input[name=r${k}]:checked`)||{}).value; const ok=v===r.a; if(ok) rs++;
-    lines.push(`${r.n}: ${v?MOT.find(m=>m[0]===v)[1]:'(no answer)'} ${ok?'(matches)':'(suggested: '+MOT.find(m=>m[0]===r.a)[1]+')'}`);
-    lines.push(`   Resources at risk: ${$('#rw'+k).value.trim()||'(not answered)'}`)});
-  lines.push(`Round 2 score: ${rs} of ${RISK.length}`);
-  const out=$('#out'); out.classList.remove('hide'); resultsBlock(out,'Strategy Detective',lines); out.scrollIntoView({behavior:'smooth'});
+  const total=first+riskFirst, max=CASES.length+RISK.length, rk=RANKS.find(r=>total>=r[0]);
+  const nm=$('#stuName').value.trim()||'Ace Detective', date=new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  const st=Math.floor(total/max*5), stars='★'.repeat(st)+'☆'.repeat(5-st);
+  const lines=[`Rank: ${rk[1]}`,`First-try points: ${total} of ${max}`,`Best streak: ${best}`,'',...log];
+  $('#riskCard').classList.add('hide');
+  const out=$('#out'); out.classList.remove('hide');
+  out.innerHTML=`<div class="cert" id="cert"><p class="lbl" style="color:var(--gold-ink)">AP Business with Personal Finance · Task 1</p>${badgeSVG(rk[3])}
+   <p class="confetti" aria-hidden="true">🎉 🕵️ 🎉</p><p class="stars" aria-label="${total} of ${max} points">${stars}</p><h2>${rk[2]} ${rk[1]}</h2><p style="margin:0">This certifies that</p><div class="who">${esc(nm)}</div>
+   <p style="margin:0 0 6px">cracked all ${CASES.length} Strategy Detective cases and explained why ${RISK.length} founders took the risk.</p>
+   <p style="margin:0 0 6px"><strong>${total} of ${max}</strong> first-try points · best streak <strong>${best}</strong></p><p class="muted" style="margin:0">${rk[4]}</p><p class="muted" style="margin:8px 0 0">${date}</p></div>
+   <div class="row noprint" style="margin-top:14px;justify-content:center"><button class="btn gold" type="button" id="printBtn">Print or save certificate</button><button class="btn" type="button" id="againBtn">Play again</button><button class="btn ghost" type="button" id="copyBtn2">Copy my results</button></div>
+   <div class="fb good noprint" style="text-align:center"><p><strong>🏅 Save your certificate!</strong> Click <em>Print or save certificate</em> and choose <em>Save as PDF</em> (or take a screenshot). Then send it to your teacher in Canvas Inbox to ask about possible <strong>Extra Learning Opportunity (ELO)</strong> points.</p></div>`;
+  $('#printBtn').addEventListener('click',()=>window.print());
+  $('#againBtn').addEventListener('click',()=>{start();$('#intro').scrollIntoView({behavior:'smooth'})});
+  $('#copyBtn2').addEventListener('click',e=>{const t=`STRATEGY DETECTIVE · ${nm}\n${lines.join('\n')}`;try{navigator.clipboard.writeText(t).then(()=>{e.target.textContent='Copied!'})}catch(_){}});
+  out.scrollIntoView({behavior:'smooth'}); say(`Badge earned: ${rk[1]}`);
 });
-render();
+start();
 
 </script>
 </body></html>
